@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -186,6 +186,63 @@
         .cta-panel p{ color:#475467; }
         .alert{border:1px solid var(--line); background:#ecfdf5; color:#14532d; padding:12px 14px; border-radius:12px; font-weight:600}
         .alert.error{ background:#fef2f2; color:#991b1b }
+
+
+
+
+
+
+        /* --- Mobile hamburger --- */
+        .hamburger{
+            display:none; /* shown on mobile via media query */
+            border:1px solid var(--line);
+            background:#fff;
+            border-radius:12px;
+            padding:10px 12px;
+            gap:6px;
+            align-items:center;
+        }
+        .hamburger .bar{
+            display:block; width:18px; height:2px; background:#111827; margin:3px 0; border-radius:2px;
+        }
+
+        /* desktop nav baseline */
+        .topnav{ display:flex; gap:10px; align-items:center; }
+
+        /* Mobile layout: hide buttons, show hamburger, use a popover panel */
+        @media (max-width: 760px){
+            .hamburger{ display:inline-flex; }
+            .topnav{
+                position: fixed;
+                top: 64px;           /* just under the header */
+                right: 16px;
+                left: 16px;
+                display: grid;
+                gap: 10px;
+                padding: 12px;
+                border: 1px solid var(--line);
+                border-radius: 14px;
+                background: #fff;
+                box-shadow: var(--shadow);
+                z-index: 50;
+                transform: translateY(-12px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity .15s ease, transform .15s ease;
+            }
+            .topnav a.btn{ width:100%; justify-content:center; }
+
+            /* open state toggled by JS */
+            .topnav.is-open{
+                opacity:1; transform: translateY(0); pointer-events:auto;
+            }
+
+            /* keep header content spaced (brand + burger) */
+            .nav{ position:sticky; top:0; background:var(--bg); z-index:60; }
+        }
+
+
+
     </style>
 
 
@@ -202,7 +259,7 @@
         gtag('config', 'G-EXFSK5JJWG');
     </script>
 
-    
+
     <script src="https://app.termly.io/resource-blocker/0f25c24d-ccf4-4814-a496-1ecbdab88366?autoBlock=on"></script>
 
 
@@ -213,13 +270,29 @@
         <span class="logo" aria-hidden="true"></span>
         <span>FanForum</span>
     </div>
-    <nav aria-label="Primary">
+
+    <!-- mobile toggle -->
+    <button
+            id="menuToggle"
+            class="hamburger"
+            aria-label="Open menu"
+            aria-controls="primaryNav"
+            aria-expanded="false">
+        <!-- simple icon -->
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </button>
+
+    <!-- nav links -->
+    <nav id="primaryNav" class="topnav" aria-label="Primary">
         <a class="btn ghost" href="#features">Features</a>
         <a class="btn ghost" href="#live">Live Match</a>
         <a class="btn ghost" href="#clubs">Club Rooms</a>
         <a class="btn" href="#signup">Sign in</a>
     </nav>
 </header>
+
 
 <div class="hero-wrap">
     <section class="hero">
@@ -558,10 +631,72 @@
         handleMQ(mq); // init
     })();
 </script>
+
+
+<script>
+    (function(){
+        const toggle = document.getElementById('menuToggle');
+        const panel  = document.getElementById('primaryNav');
+        if(!toggle || !panel) return;
+
+        const focusableSel = 'a[href], button:not([disabled])';
+        let lastFocused = null;
+
+        function openMenu(){
+            lastFocused = document.activeElement;
+            panel.classList.add('is-open');
+            toggle.setAttribute('aria-expanded','true');
+            // focus first link
+            const first = panel.querySelector(focusableSel);
+            first && first.focus();
+            // lock background scroll on iOS-ish
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMenu(){
+            panel.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded','false');
+            document.body.style.overflow = '';
+            if (lastFocused) { toggle.focus(); }
+        }
+        function isOpen(){ return panel.classList.contains('is-open'); }
+
+        // Toggle click
+        toggle.addEventListener('click', () => isOpen() ? closeMenu() : openMenu());
+
+        // Close when clicking a link
+        panel.addEventListener('click', (e) => {
+            if (e.target.closest('a')) closeMenu();
+        });
+
+        // Click outside
+        document.addEventListener('click', (e) => {
+            if (!isOpen()) return;
+            const isInside = panel.contains(e.target) || toggle.contains(e.target);
+            if (!isInside) closeMenu();
+        });
+
+        // ESC to close; simple focus trap (TAB cycles within panel)
+        document.addEventListener('keydown', (e) => {
+            if (!isOpen()) return;
+            if (e.key === 'Escape') { e.preventDefault(); closeMenu(); }
+            if (e.key === 'Tab') {
+                const focusables = [...panel.querySelectorAll(focusableSel)];
+                if (focusables.length === 0) return;
+                const first = focusables[0], last = focusables[focusables.length - 1];
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        });
+
+        // Ensure desktop view resets state on resize
+        const mq = window.matchMedia('(min-width: 761px)');
+        mq.addEventListener('change', (e) => { if (e.matches) closeMenu(); });
+    })();
+</script>
+
+
 </body>
 </html>
-
-
 
 
 
